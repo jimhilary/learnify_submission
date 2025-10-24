@@ -5,13 +5,15 @@ type Props = {
   onClick?: () => void
   className?: string
   variant?: 'primary' | 'secondary' | 'outline'
+  disabled?: boolean
 }
 
 export const Button: React.FC<Props> = ({
   children,
   onClick,
   className = '',
-  variant = 'primary'
+  variant = 'primary',
+  disabled = false
 }) => {
   const baseClasses = 'px-6 py-2.5 rounded-lg font-medium transition-all duration-200'
 
@@ -24,7 +26,8 @@ export const Button: React.FC<Props> = ({
   return (
     <button
       onClick={onClick}
-      className={`${baseClasses} ${variantClasses[variant]} ${className}`}
+      disabled={disabled}
+      className={`${baseClasses} ${variantClasses[variant]} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
     >
       {children}
     </button>

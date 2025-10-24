@@ -81,3 +81,13 @@ htmlcov/
 # Package files
 *.tar.gz
 *.zip
+
+# Exclude internal docs and deployment guides
+frontend/.deployment-commands.md
+frontend/DEPLOYMENT.md
+frontend/IMPLEMENTATION_REPORT.md
+frontend/NETLIFY_DEPLOYMENT.md
+frontend/QUICK_START_GUIDE.md
+frontend/SUBMISSION_CHECKLIST.md
+frontend/TESTING_CHECKLIST.md
+frontend/netlify.toml

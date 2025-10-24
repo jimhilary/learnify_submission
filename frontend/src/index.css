@@ -8,20 +8,20 @@ html, body, #root {
 }
 
 html {
-  @apply bg-background-light dark:bg-background-dark;
+  @apply bg-gray-50 dark:bg-gray-900;
 }
 
 body {
-  @apply bg-background-light dark:bg-background-dark;
+  @apply bg-gray-50 dark:bg-gray-900;
 }
 
 #root {
-  @apply bg-background-light dark:bg-background-dark;
+  @apply bg-gray-50 dark:bg-gray-900;
 }
 
 /* small design tokens */
 .btn-primary {
-  @apply px-4 py-2 rounded-lg text-white bg-primary hover:brightness-90 transition-all duration-200;
+  @apply px-4 py-2 rounded-lg text-white bg-blue-500 hover:bg-blue-600 transition-all duration-200;
 }
 
 .card {

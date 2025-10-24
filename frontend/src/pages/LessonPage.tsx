@@ -1,20 +1,69 @@
-import React, { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import Card from '../components/Card'
 import Button from '../components/Button'
 import ReactMarkdown from 'react-markdown'
-import lessons from '../dummydata/lessons'
+import { useAppDispatch, useAppSelector } from '../store/hooks'
+import { fetchLessonById } from '../store/slices/lessonsSlice'
+import { markLessonCompleted, markLessonIncomplete } from '../store/slices/progressSlice'
+import { selectLessonById, selectLessonsByCourseId, selectIsLessonCompleted } from '../store/selectors'
+import { useLanguage } from '../context/LanguageContext'
 import type { Lesson } from '../types/lesson'
 import { generateLessonMarkdown } from '../dummydata/dummyMD'
-// Mock lesson content (you can replace with fetched content later)
-const mockLesson = lessons[0]
 
 export const LessonPage: React.FC<{ lesson?: Lesson }> = ({ lesson: propLesson }) => {
   const { id } = useParams()
-  const [completed, setCompleted] = useState(false)
+  const navigate = useNavigate()
+  const dispatch = useAppDispatch()
+  const { t } = useLanguage()
+  
+  const lessonId = id ? Number(id) : 0
+  const lesson = useAppSelector(selectLessonById(lessonId))
+  const isCompleted = useAppSelector(selectIsLessonCompleted(lessonId))
+  const courseLessons = useAppSelector(selectLessonsByCourseId(lesson?.courseId || 0))
+  
+  const [completed, setCompleted] = useState(isCompleted)
 
-  const lesson = propLesson || lessons.find(l => l.id === Number(id)) || mockLesson
-  const markdownContent = generateLessonMarkdown(lesson.title, lesson.id)
+  useEffect(() => {
+    if (!propLesson && lessonId) {
+      dispatch(fetchLessonById(lessonId))
+    }
+  }, [dispatch, lessonId, propLesson])
+
+  useEffect(() => {
+    setCompleted(isCompleted)
+  }, [isCompleted])
+
+  const displayLesson = propLesson || lesson
+  if (!displayLesson) {
+    return (
+      <div className="text-center py-8">
+        <h1 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-4">Lesson Not Found</h1>
+        <p className="text-gray-600 dark:text-gray-400">The requested lesson does not exist.</p>
+      </div>
+    )
+  }
+
+  const markdownContent = generateLessonMarkdown(displayLesson.title, displayLesson.id)
+  
+  // Find next and previous lessons
+  const sortedLessons = courseLessons.sort((a, b) => a.id - b.id)
+  const currentIndex = sortedLessons.findIndex(l => l.id === displayLesson.id)
+  const nextLesson = currentIndex < sortedLessons.length - 1 ? sortedLessons[currentIndex + 1] : null
+  const prevLesson = currentIndex > 0 ? sortedLessons[currentIndex - 1] : null
+
+  const handleToggleComplete = () => {
+    const newCompleted = !completed
+    setCompleted(newCompleted)
+    
+    if (displayLesson.courseId) {
+      if (newCompleted) {
+        dispatch(markLessonCompleted({ lessonId: displayLesson.id, courseId: displayLesson.courseId }))
+      } else {
+        dispatch(markLessonIncomplete({ lessonId: displayLesson.id, courseId: displayLesson.courseId }))
+      }
+    }
+  }
 
   // Map difficulty → color pill
   const difficultyColor = (difficulty?: string) => {
@@ -36,25 +85,25 @@ export const LessonPage: React.FC<{ lesson?: Lesson }> = ({ lesson: propLesson }
       <div className="mb-6 flex items-center gap-2 text-sm text-gray-700 dark:text-gray-100">
         <Link to="/" className="hover:text-blue-600 dark:hover:text-blue-400">Home</Link>
         <span>/</span>
-        <Link to="/courses/1" className="hover:text-blue-600 dark:hover:text-blue-400">Course</Link>
+        <Link to={`/courses/${displayLesson.courseId}`} className="hover:text-blue-600 dark:hover:text-blue-400">Course</Link>
         <span>/</span>
-        <span className="text-gray-900 dark:text-white">Lesson {id}</span>
+        <span className="text-gray-900 dark:text-white">Lesson {displayLesson.id}</span>
       </div>
 
       {/* Lesson Card */}
       <Card className="mb-6">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{lesson.title}</h1>
-          <span className={`px-3 py-1 rounded-full text-sm font-medium ${difficultyColor(lesson.difficulty)}`}>
-            {lesson.difficulty}
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{displayLesson.title}</h1>
+          <span className={`px-3 py-1 rounded-full text-sm font-medium ${difficultyColor(displayLesson.difficulty)}`}>
+            {displayLesson.difficulty}
           </span>
         </div>
 
         {/* Lesson Image */}
         <div className="relative mb-6 overflow-hidden rounded-xl shadow-md">
           <img
-            src={lesson.imageUrl}
-            alt={lesson.title}
+            src={displayLesson.imageUrl}
+            alt={displayLesson.title}
             className="w-full h-64 object-cover transition-transform duration-300 hover:scale-105"
           />
         </div>
@@ -71,10 +120,37 @@ export const LessonPage: React.FC<{ lesson?: Lesson }> = ({ lesson: propLesson }
 
         {/* Action Buttons */}
         <div className="flex gap-4 mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-          <Button variant="primary" onClick={() => setCompleted(!completed)}>
-            {completed ? '✓ Completed' : 'Mark as Complete'}
+          <Button variant="primary" onClick={handleToggleComplete}>
+            {completed ? t('button.completed') : t('button.markComplete')}
           </Button>
-          <Button variant="secondary">Next Lesson →</Button>
+          
+          {/* Navigation Buttons */}
+          <div className="flex gap-2 ml-auto">
+            {prevLesson && (
+              <Button 
+                variant="secondary" 
+                onClick={() => navigate(`/lessons/${prevLesson.id}`)}
+              >
+                {t('button.previous')}
+              </Button>
+            )}
+            {nextLesson && (
+              <Button 
+                variant="secondary" 
+                onClick={() => navigate(`/lessons/${nextLesson.id}`)}
+              >
+                {t('button.next')}
+              </Button>
+            )}
+            {!nextLesson && (
+              <Button 
+                variant="secondary" 
+                onClick={() => navigate(`/courses/${displayLesson.courseId}`)}
+              >
+                {t('button.backToCourse')}
+              </Button>
+            )}
+          </div>
         </div>
       </Card>
 

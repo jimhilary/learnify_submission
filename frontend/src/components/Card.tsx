@@ -13,7 +13,6 @@ export const Card: React.FC<{ children: React.ReactNode; className?: string }> =
         ? 'bg-gray-800 border-gray-700' 
         : 'bg-white border-gray-100'
     } ${className}`}>
-      <h1>{darkMode}</h1>
       {children}
     </div>
   )
