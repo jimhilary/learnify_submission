@@ -4,20 +4,24 @@ import type { Lesson } from '../types/lesson'
 
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
+const API_KEY = import.meta.env.VITE_API_KEY || 'test-api-key-12345'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 5000, // Reduced timeout for faster fallback
+  timeout: 5000,
   headers: {
     'Content-Type': 'application/json',
+    'Authorization': `Bearer ${API_KEY}`,
   },
 })
 
 // Request interceptor for adding auth headers
 api.interceptors.request.use(
   (config) => {
-    // Always add the API key that backend expects
-    config.headers.Authorization = `Bearer test-api-key-12345`
+    // Ensure Authorization header is always set
+    if (!config.headers.Authorization) {
+      config.headers.Authorization = `Bearer ${API_KEY}`
+    }
     return config
   },
   (error) => {
